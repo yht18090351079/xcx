@@ -152,6 +152,24 @@ ecosystem.config.js
 # 性能监控
 newrelic_agent.log
 
+# Netlify 相关
+.netlify/
+public/
+functions-serve/
+dist/
+
+# Netlify 构建缓存
+.cache/
+.nuxt/
+.next/
+
+# Netlify 函数构建产物
+.netlify/functions/
+netlify/functions/node_modules/
+
+# Netlify CLI
+.netlify.state
+
 # 其他
 *.tgz
 *.tar.gz

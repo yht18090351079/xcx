@@ -332,8 +332,6 @@ class WeatherAnalysisApp {
         
         // 天气统计
         this.elements.currentWeather.textContent = stats.currentWeather;
-        this.elements.avgWindSpeed.textContent = stats.avgWindSpeed;
-        this.elements.avgUVIndex.textContent = stats.avgUVIndex;
     }
     
     // 计算统计数据
