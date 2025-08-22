@@ -12,9 +12,6 @@ class WeatherAnalysisApp {
             refreshBtn: document.getElementById('refreshBtn'),
             
             // 统计卡片元素
-            avgPrecipitation: document.getElementById('avgPrecipitation'),
-            maxPrecipitation: document.getElementById('maxPrecipitation'),
-            rainyPeriods: document.getElementById('rainyPeriods'),
             currentWeather: document.getElementById('currentWeather'),
             
             // 图表画布
@@ -325,26 +322,13 @@ class WeatherAnalysisApp {
     updateStatsCards() {
         const stats = this.calculateStats();
         
-        // 降水统计
-        this.elements.avgPrecipitation.textContent = `${stats.avgPrecipitation}%`;
-        this.elements.maxPrecipitation.textContent = `${stats.maxPrecipitation}%`;
-        this.elements.rainyPeriods.textContent = `${stats.rainyPeriods}个`;
-        
         // 天气统计
         this.elements.currentWeather.textContent = stats.currentWeather;
     }
     
     // 计算统计数据
     calculateStats() {
-        const precipitations = this.weatherData
-            .map(item => this.parsePrecipitation(item.precipitation))
-            .filter(prec => !isNaN(prec));
-        
         return {
-            avgPrecipitation: precipitations.length > 0 ? 
-                Math.round(precipitations.reduce((a, b) => a + b, 0) / precipitations.length) : '--',
-            maxPrecipitation: precipitations.length > 0 ? Math.max(...precipitations) : '--',
-            rainyPeriods: precipitations.filter(p => p > 30).length,
             currentWeather: this.weatherData[0]?.weather || '--'
         };
     }
