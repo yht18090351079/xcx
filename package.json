@@ -1,0 +1,47 @@
+{
+  "name": "guangyuan-weather-analysis",
+  "version": "1.0.0",
+  "description": "广元市天气分析系统 - 实时抓取MSN天气数据并提供可视化分析",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "netlify dev",
+    "build": "npm run copy-files",
+    "copy-files": "cp index.html app.js styles.css weather_data.json public/ 2>/dev/null || true",
+    "scrape": "node scraper.js",
+    "deploy": "netlify deploy --prod",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "weather",
+    "scraping",
+    "analysis",
+    "guangyuan",
+    "msn",
+    "puppeteer",
+    "express",
+    "charts"
+  ],
+  "author": "Weather Analysis Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "puppeteer": "^21.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "bugs": {
+    "url": "."
+  },
+  "homepage": "."
+}
