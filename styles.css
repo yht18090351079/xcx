@@ -37,9 +37,9 @@
     --text-dark: rgba(0, 0, 0, 0.8);
     
     /* 阴影效果 */
-    --shadow-glass: 0 8px 32px rgba(31, 38, 135, 0.37);
-    --shadow-hover: 0 15px 40px rgba(31, 38, 135, 0.5);
-    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.1);
+    --shadow-glass: 0 8px 32px rgba(100, 116, 139, 0.15);
+    --shadow-hover: 0 15px 40px rgba(100, 116, 139, 0.25);
+    --shadow-card: 0 4px 20px rgba(71, 85, 105, 0.1);
     
     /* 圆角 */
     --border-radius: 20px;
@@ -347,12 +347,12 @@ body {
 
 /* 降水卡片样式 - 苹果风格 */
 .precipitation-card {
-    background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(64, 169, 255, 0.1));
+    background: linear-gradient(135deg, rgba(0, 122, 255, 0.05), rgba(64, 169, 255, 0.08));
 }
 
 .precipitation-card .stat-icon {
     color: var(--primary-color);
-    text-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+    text-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
 }
 
 .precipitation-probability {
@@ -417,12 +417,12 @@ body {
 
 /* 天气卡片样式 - 苹果风格 */
 .weather-card {
-    background: linear-gradient(135deg, rgba(52, 199, 89, 0.1), rgba(255, 149, 0, 0.1));
+    background: linear-gradient(135deg, rgba(52, 199, 89, 0.05), rgba(255, 149, 0, 0.08));
 }
 
 .weather-card .stat-icon {
     color: var(--success-color);
-    text-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+    text-shadow: 0 2px 8px rgba(52, 199, 89, 0.2);
 }
 
 .current-weather {

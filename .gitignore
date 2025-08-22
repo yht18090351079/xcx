@@ -170,6 +170,9 @@ netlify/functions/node_modules/
 # Netlify CLI
 .netlify.state
 
+# NPM配置文件可能包含敏感信息
+# .npmrc
+
 # 其他
 *.tgz
 *.tar.gz
