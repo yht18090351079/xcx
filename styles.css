@@ -20,10 +20,10 @@
     --soft-gray: #F2F2F7;
     
     /* 毛玻璃背景色 */
-    --glass-bg-primary: rgba(255, 255, 255, 0.15);
-    --glass-bg-secondary: rgba(255, 255, 255, 0.25);
-    --glass-bg-card: rgba(255, 255, 255, 0.2);
-    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-bg-primary: rgba(255, 255, 255, 0.6);
+    --glass-bg-secondary: rgba(255, 255, 255, 0.75);
+    --glass-bg-card: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.8);
     
     /* 深色模式支持 */
     --bg-primary: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
@@ -31,9 +31,9 @@
     --bg-chart: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
     
     /* 文字颜色 */
-    --text-primary: rgba(255, 255, 255, 0.95);
-    --text-secondary: rgba(255, 255, 255, 0.8);
-    --text-muted: rgba(255, 255, 255, 0.6);
+    --text-primary: rgba(30, 41, 59, 0.95);
+    --text-secondary: rgba(51, 65, 85, 0.8);
+    --text-muted: rgba(100, 116, 139, 0.7);
     --text-dark: rgba(0, 0, 0, 0.8);
     
     /* 阴影效果 */
@@ -66,7 +66,7 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 30%, #cbd5e1 70%, #94a3b8 100%);
     background-attachment: fixed;
     min-height: 100vh;
     color: var(--text-primary);
