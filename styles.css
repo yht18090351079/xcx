@@ -16,8 +16,8 @@
     --success-color: #34C759;
     --warning-color: #FF9500;
     --error-color: #FF3B30;
-    --purple-color: #AF52DE;
-    --pink-color: #FF2D92;
+    --accent-color: #5AC8FA;
+    --soft-gray: #F2F2F7;
     
     /* 毛玻璃背景色 */
     --glass-bg-primary: rgba(255, 255, 255, 0.15);
@@ -26,9 +26,9 @@
     --glass-border: rgba(255, 255, 255, 0.3);
     
     /* 深色模式支持 */
-    --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --bg-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --bg-chart: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --bg-primary: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+    --bg-secondary: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+    --bg-chart: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
     
     /* 文字颜色 */
     --text-primary: rgba(255, 255, 255, 0.95);

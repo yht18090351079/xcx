@@ -1,3 +1,9 @@
+// 函数配置
+exports.config = {
+    timeout: 10, // 10秒超时
+    memory: 512 // 512MB内存
+};
+
 // 系统状态API函数
 exports.handler = async (event, context) => {
     // 设置CORS头

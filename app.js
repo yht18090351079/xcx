@@ -411,14 +411,6 @@ class WeatherAnalysisApp {
                 label = '降水概率 (%)';
                 color = '#2196F3';
                 break;
-            case 'humidity':
-                data = this.weatherData.map(item => {
-                    const humidity = item.details?.humidity;
-                    return humidity ? this.parsePrecipitation(humidity) : NaN;
-                });
-                label = '湿度 (%)';
-                color = '#00BCD4';
-                break;
         }
         
         chart.data.labels = labels;

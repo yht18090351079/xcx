@@ -87,6 +87,12 @@ function generateMockWeatherData() {
     return mockData;
 }
 
+// 函数配置
+exports.config = {
+    timeout: 60, // 60秒超时
+    memory: 2048 // 2048MB内存
+};
+
 // 主函数
 exports.handler = async (event, context) => {
     // 设置CORS头
