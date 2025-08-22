@@ -339,23 +339,13 @@ class WeatherAnalysisApp {
         const precipitations = this.weatherData
             .map(item => this.parsePrecipitation(item.precipitation))
             .filter(prec => !isNaN(prec));
-            
-        const windSpeeds = this.weatherData
-            .map(item => item.windSpeed)
-            .filter(speed => speed && speed !== '--');
-            
-        const uvIndexes = this.weatherData
-            .map(item => item.uvIndex)
-            .filter(uv => uv && uv !== '--');
         
         return {
             avgPrecipitation: precipitations.length > 0 ? 
                 Math.round(precipitations.reduce((a, b) => a + b, 0) / precipitations.length) : '--',
             maxPrecipitation: precipitations.length > 0 ? Math.max(...precipitations) : '--',
             rainyPeriods: precipitations.filter(p => p > 30).length,
-            currentWeather: this.weatherData[0]?.weather || '--',
-            avgWindSpeed: windSpeeds.length > 0 ? windSpeeds[0] : '--',
-            avgUVIndex: uvIndexes.length > 0 ? uvIndexes[0] : '--'
+            currentWeather: this.weatherData[0]?.weather || '--'
         };
     }
     
