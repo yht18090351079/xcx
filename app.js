@@ -406,14 +406,6 @@ class WeatherAnalysisApp {
                 label = '温度 (°C)';
                 color = '#FF9800';
                 break;
-            case 'feelsLike':
-                data = this.weatherData.map(item => {
-                    const feelsLike = item.details?.feelsLike;
-                    return feelsLike ? this.parseTemperature(feelsLike) : NaN;
-                });
-                label = '体感温度 (°C)';
-                color = '#FF5722';
-                break;
             case 'precipitation':
                 data = this.weatherData.map(item => this.parsePrecipitation(item.precipitation));
                 label = '降水概率 (%)';
