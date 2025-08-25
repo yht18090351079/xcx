@@ -211,7 +211,142 @@ function generateMockWeatherData() {
     return mockData;
 }
 
-// 主函数
+const puppeteer = require('puppeteer-core');
+const chromium = require('chrome-aws-lambda');
+
+// 简化版天气爬虫 - 适配Netlify Functions
+class NetlifyWeatherScraper {
+    constructor() {
+        this.url = 'https://www.msn.cn/zh-cn/weather/hourlyforecast/in-%E5%9B%9B%E5%B7%9D%E7%9C%81,%E5%B9%BF%E5%85%83%E5%B8%82?loc=eyJhIjoi5p2%2B6b6Z5Z2qIiwibCI6IuaXuuiLjeWOvyIsInIiOiLlm5vlt53nnIEiLCJyMiI6IuW5v%2BWFg%2BW4giIsImMiOiLkuK3ljY7kurrmsJHlhbHlkozlm70iLCJpIjoiY24iLCJ0IjoxMDEsImciOiJ6aC1jbiIsIngiOiIxMDYuMDk5MzY2IiwieSI6IjMyLjQzMDEwMyJ9&weadegreetype=C&fcsttab=precipitation';
+    }
+
+    async scrape() {
+        let browser = null;
+        try {
+            browser = await puppeteer.launch({
+                args: chromium.args,
+                defaultViewport: chromium.defaultViewport,
+                executablePath: await chromium.executablePath,
+                headless: chromium.headless,
+                ignoreHTTPSErrors: true,
+            });
+
+            const page = await browser.newPage();
+            
+            // 设置超时时间
+            page.setDefaultNavigationTimeout(30000);
+            page.setDefaultTimeout(30000);
+            
+            // 访问页面
+            await page.goto(this.url, {
+                waitUntil: 'domcontentloaded',
+                timeout: 30000
+            });
+
+            // 等待内容加载
+            await page.waitForTimeout(5000);
+
+            // 提取天气数据
+            const weatherData = await page.evaluate(() => {
+                const results = [];
+                
+                // 查找天气容器
+                const tableContainer = document.getElementById('pageBlock_table');
+                if (!tableContainer) {
+                    return results;
+                }
+
+                // 获取日期标签
+                const dateLabels = [];
+                const dayLabelSelectors = [
+                    '.dayLabel-DS-N4XCRy',
+                    '[class*="dayLabel"]'
+                ];
+                
+                dayLabelSelectors.forEach(selector => {
+                    const labels = tableContainer.querySelectorAll(selector);
+                    labels.forEach(label => {
+                        const dateText = label.textContent.trim();
+                        if (dateText && !dateLabels.includes(dateText)) {
+                            dateLabels.push(dateText);
+                        }
+                    });
+                });
+
+                // 只取前3天的日期
+                const availableDates = dateLabels.slice(0, 3);
+
+                // 获取逐小时数据
+                const hourlyItems = tableContainer.querySelectorAll('[id*="day-"][id*="-hourlyItem-"]');
+                
+                // 过滤前3天的数据
+                const filteredItems = Array.from(hourlyItems).filter(item => {
+                    const itemId = item.id || '';
+                    const dayMatch = itemId.match(/day-(\d+)-/);
+                    const dayIndex = dayMatch ? parseInt(dayMatch[1]) : 0;
+                    return dayIndex < 3;
+                });
+
+                filteredItems.forEach((item, index) => {
+                    try {
+                        const itemId = item.id || '';
+                        const dayMatch = itemId.match(/day-(\d+)-/);
+                        const dayIndex = dayMatch ? parseInt(dayMatch[1]) : 0;
+                        
+                        const hourData = {
+                            date: availableDates[dayIndex] || '',
+                            time: '',
+                            weather: '',
+                            temperature: '',
+                            precipitation: '',
+                            windSpeed: ''
+                        };
+
+                        // 提取时间
+                        const timeElement = item.querySelector('.timeItem-DS-hFPfcz span');
+                        if (timeElement) {
+                            hourData.time = timeElement.textContent.trim();
+                        }
+
+                        // 提取天气状况
+                        const weatherElement = item.querySelector('.captureItem-DS-BM8Vzt span');
+                        if (weatherElement) {
+                            hourData.weather = weatherElement.textContent.trim();
+                        }
+
+                        // 提取基本信息
+                        const rowInfoItems = item.querySelectorAll('.rowInfo-DS-JGD9Og .rowItemText-DS-cwphqS');
+                        if (rowInfoItems.length >= 4) {
+                            hourData.temperature = rowInfoItems[0].textContent.trim();
+                            hourData.precipitation = rowInfoItems[1].textContent.trim();
+                            hourData.windSpeed = rowInfoItems[3].textContent.trim();
+                        }
+
+                        if (hourData.time || hourData.weather || hourData.temperature) {
+                            results.push(hourData);
+                        }
+                    } catch (itemError) {
+                        console.warn(`提取第${index}项数据时出错:`, itemError.message);
+                    }
+                });
+
+                return results;
+            });
+
+            return weatherData;
+
+        } catch (error) {
+            console.error('爬取失败:', error.message);
+            throw error;
+        } finally {
+            if (browser) {
+                await browser.close();
+            }
+        }
+    }
+}
+
+// Netlify Function 处理器
 exports.handler = async (event, context) => {
     // 设置CORS头
     const headers = {
@@ -221,7 +356,7 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json'
     };
 
-    // 处理OPTIONS请求（CORS预检）
+    // 处理OPTIONS请求
     if (event.httpMethod === 'OPTIONS') {
         return {
             statusCode: 200,
@@ -237,121 +372,33 @@ exports.handler = async (event, context) => {
             headers,
             body: JSON.stringify({
                 success: false,
-                message: '方法不允许'
+                message: '只允许GET请求'
             })
         };
     }
 
     try {
-        // 获取客户端IP
-        const clientIP = event.headers['x-forwarded-for'] || 
-                        event.headers['x-real-ip'] || 
-                        context.ip || 
-                        'unknown';
+        const scraper = new NetlifyWeatherScraper();
+        const weatherData = await scraper.scrape();
 
-        // 检查请求限制
-        const rateLimitResult = checkRateLimit(clientIP);
-        if (!rateLimitResult.allowed) {
-            return {
-                statusCode: 429,
-                headers,
-                body: JSON.stringify({
-                    success: false,
-                    message: '请求过于频繁，请稍后重试',
-                    retryAfter: rateLimitResult.retryAfter
-                })
-            };
+        if (!weatherData || weatherData.length === 0) {
+            throw new Error('未获取到有效的天气数据');
         }
-
-        // 检查缓存
-        if (isCacheValid()) {
-            console.log('返回缓存数据');
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({
-                    success: true,
-                    data: weatherDataCache.data,
-                    cached: true,
-                    timestamp: new Date(weatherDataCache.timestamp).toISOString(),
-                    source: 'cache'
-                })
-            };
-        }
-
-        let weatherData;
-        
-        // 尝试获取实时API数据
-        try {
-            if (OPENWEATHER_API_KEY === 'demo_key') {
-                throw new Error('请配置 OPENWEATHER_API_KEY 环境变量');
-            }
-            
-            console.log('正在获取实时天气数据...');
-            const apiData = await fetchWeatherData();
-            weatherData = transformWeatherData(apiData);
-            console.log(`成功获取 ${weatherData.length} 条实时天气数据`);
-            
-        } catch (apiError) {
-            console.log('API调用失败，使用模拟数据:', apiError.message);
-            weatherData = generateMockWeatherData();
-        }
-
-        // 数据验证和清理
-        const cleanedData = weatherData
-            .filter(item => item && (item.time || item.temperature || item.weather))
-            .map(item => ({
-                date: item.date || '',
-                time: item.time || '',
-                weather: item.weather || '',
-                temperature: item.temperature || '',
-                precipitation: item.precipitation || '',
-                uvIndex: item.uvIndex || '',
-                windSpeed: item.windSpeed || '',
-                details: item.details || {}
-            }));
-
-        if (cleanedData.length === 0) {
-            throw new Error('处理后的数据为空');
-        }
-
-        // 更新缓存
-        updateCache(cleanedData);
 
         return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
                 success: true,
-                data: cleanedData,
-                cached: false,
+                data: weatherData,
                 timestamp: new Date().toISOString(),
-                count: cleanedData.length,
-                source: OPENWEATHER_API_KEY === 'demo_key' ? 'mock' : 'openweathermap-api'
+                count: weatherData.length
             })
         };
 
     } catch (error) {
-        console.error('天气数据获取失败:', error.message);
-
-        // 如果有缓存数据，即使过期也返回（带警告）
-        if (weatherDataCache.data) {
-            console.log('返回过期缓存数据');
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({
-                    success: true,
-                    data: weatherDataCache.data,
-                    cached: true,
-                    expired: true,
-                    warning: '数据可能不是最新的',
-                    timestamp: new Date(weatherDataCache.timestamp).toISOString(),
-                    error: error.message
-                })
-            };
-        }
-
+        console.error('API错误:', error.message);
+        
         return {
             statusCode: 500,
             headers,

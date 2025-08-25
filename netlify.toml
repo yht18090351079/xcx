@@ -1,28 +1,20 @@
 [build]
-  # 构建命令
-  command = "npm run build"
-  # 发布目录
-  publish = "public"
-  # 函数目录
   functions = "netlify/functions"
+  publish = "."
 
 [build.environment]
-  # Node.js 版本
   NODE_VERSION = "18"
-  # NPM 版本
-  NPM_VERSION = "9"
-  # 只安装生产依赖
-  NODE_ENV = "production"
-  # OpenWeatherMap API密钥 (需要在Netlify控制台设置)
-  # OPENWEATHER_API_KEY = "your_api_key_here"
-  # 加速npm安装
-  NPM_CONFIG_AUDIT = "false"
-  NPM_CONFIG_FUND = "false"
 
-# 重定向规则 - SPA路由支持
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from = "/api/weather"
+  to = "/.netlify/functions/weather"
   status = 200
 
 [[redirects]]
