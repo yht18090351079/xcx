@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "node server.js",
     "build": "echo 'Vercel will handle the build process'",
+    "postinstall": "npx puppeteer browsers install chrome || echo 'Chrome installation failed, will try fallback'",
     "test": "node test-scraper.js",
     "scraper": "node scraper.js"
   },

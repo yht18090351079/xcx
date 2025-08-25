@@ -12,17 +12,61 @@ class MSNWeatherScraper {
      */
     async init() {
         try {
-            this.browser = await puppeteer.launch({
-                headless: true,
+            // 检测运行环境
+            const isVercel = process.env.VERCEL || process.env.NOW_REGION;
+            const isDevelopment = process.env.NODE_ENV !== 'production';
+            
+            console.log('🌐 运行环境:', { isVercel, isDevelopment, nodeEnv: process.env.NODE_ENV });
+            
+            let browserConfig = {
+                headless: 'new',
+                timeout: 30000,
+                protocolTimeout: 30000,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
-                    '--disable-web-security'
-                ],
-                timeout: 30000
-            });
-
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--disable-gpu',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor'
+                ]
+            };
+            
+            // Vercel环境特殊配置
+            if (isVercel) {
+                console.log('🔧 应用Vercel环境优化配置');
+                browserConfig.args.push(
+                    '--single-process',
+                    '--no-zygote',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding',
+                    '--disable-extensions',
+                    '--disable-plugins',
+                    '--disable-ipc-flooding-protection',
+                    '--disable-default-apps',
+                    '--disable-sync',
+                    '--metrics-recording-only',
+                    '--no-default-browser-check'
+                );
+                
+                // Vercel环境下尝试使用Chrome Headless Shell
+                try {
+                    // 尝试使用系统Chrome
+                    browserConfig.executablePath = '/usr/bin/google-chrome-stable';
+                } catch (e) {
+                    // 如果没有找到，让Puppeteer自动下载
+                    delete browserConfig.executablePath;
+                }
+            }
+            
+            console.log('⚙️ 浏览器配置:', JSON.stringify(browserConfig, null, 2));
+            
+            this.browser = await puppeteer.launch(browserConfig);
+            console.log('✅ 浏览器启动成功');
+            
             this.page = await this.browser.newPage();
             
             // 设置超时时间
@@ -30,15 +74,42 @@ class MSNWeatherScraper {
             this.page.setDefaultNavigationTimeout(30000);
             
             // 设置用户代理
-            await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+            await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
             
             // 设置视口
             await this.page.setViewport({ width: 1366, height: 768 });
 
             console.log('✅ 浏览器初始化成功');
+            
         } catch (error) {
             console.error('❌ 浏览器初始化失败:', error.message);
-            throw error;
+            console.error('详细错误:', error);
+            
+            // 尝试备用配置
+            if (!this.browser) {
+                console.log('🔄 尝试备用浏览器配置...');
+                try {
+                    this.browser = await puppeteer.launch({
+                        headless: 'new',
+                        args: [
+                            '--no-sandbox',
+                            '--disable-setuid-sandbox',
+                            '--disable-dev-shm-usage'
+                        ]
+                    });
+                    
+                    this.page = await this.browser.newPage();
+                    await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+                    await this.page.setViewport({ width: 1366, height: 768 });
+                    
+                    console.log('✅ 备用配置启动成功');
+                } catch (fallbackError) {
+                    console.error('❌ 备用配置也失败:', fallbackError.message);
+                    throw new Error(`浏览器启动失败: ${error.message}`);
+                }
+            } else {
+                throw error;
+            }
         }
     }
 
