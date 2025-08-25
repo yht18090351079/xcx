@@ -4,13 +4,6 @@ class WeatherAnalysisApp {
         this.weatherData = [];
         this.charts = {};
         this.isLoading = false;
-        this.autoRefreshTimer = null;
-        this.lastUpdateTime = null;
-        this.silentUpdate = false; // 静默更新标志
-        
-        // 自动刷新配置
-        this.AUTO_REFRESH_INTERVAL = 30 * 60 * 1000; // 30分钟
-        this.SILENT_UPDATE_THRESHOLD = 5 * 60 * 1000; // 5分钟后开始静默更新
         
         // DOM元素引用
         this.elements = {
