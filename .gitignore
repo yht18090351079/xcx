@@ -176,3 +176,4 @@ netlify/functions/node_modules/
 # 其他
 *.tgz
 *.tar.gz
+.vercel

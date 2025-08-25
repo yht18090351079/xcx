@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "guangyuan-weather",
   "builds": [
     {
       "src": "server.js",
