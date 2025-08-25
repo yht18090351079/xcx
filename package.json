@@ -5,12 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "netlify dev",
-    "build": "npm run copy-files && echo 'Build completed successfully'",
-    "copy-files": "mkdir -p public && cp index.html app.js styles.css weather_data.json _redirects public/ 2>/dev/null || true",
-
-    "deploy": "netlify deploy --prod",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node server.js",
+    "build": "echo 'Vercel will handle the build process'",
+    "test": "node test-scraper.js",
+    "scraper": "node scraper.js"
   },
   "keywords": [
     "weather",
@@ -24,12 +22,14 @@
   ],
   "author": "Weather Analysis Team",
   "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5", 
-    "nodemon": "^3.0.0",
-    "netlify-cli": "^17.0.0"
+    "cors": "^2.8.5",
+    "puppeteer": "^21.0.0",
+    "puppeteer-core": "^21.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
   },
   "engines": {
     "node": "18.x",
