@@ -276,14 +276,52 @@ class WeatherAnalysisApp {
         this.showLoading();
         
         try {
-            // 检测是否在Netlify环境
-            const apiBase = window.location.hostname.includes('netlify.app') || 
-                           window.location.hostname.includes('netlify.com') ||
-                           window.location.port === '888' ? '' : '';
-            const response = await fetch(`${apiBase}/api/weather`);
+            // 检测部署环境并设置正确的API路径
+            const isLocalhost = window.location.hostname === 'localhost' || 
+                               window.location.hostname === '127.0.0.1';
+            const isNetlify = window.location.hostname.includes('netlify.app') || 
+                             window.location.hostname.includes('netlify.com');
+            const isVercel = window.location.hostname.includes('vercel.app');
+            
+            let apiUrl;
+            if (isLocalhost) {
+                // 本地开发环境
+                apiUrl = `${window.location.origin}/api/weather`;
+            } else if (isNetlify) {
+                // Netlify环境使用Functions
+                apiUrl = `${window.location.origin}/.netlify/functions/weather`;
+            } else if (isVercel) {
+                // Vercel环境
+                apiUrl = `${window.location.origin}/api/weather`;
+            } else {
+                // 其他环境，默认使用相对路径
+                apiUrl = '/api/weather';
+            }
+            
+            console.log('API请求地址:', apiUrl);
+            const response = await fetch(apiUrl);
+            
+            console.log('响应状态:', response.status, response.statusText);
+            console.log('响应头 Content-Type:', response.headers.get('content-type'));
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                // 尝试读取错误响应内容
+                let errorText;
+                try {
+                    errorText = await response.text();
+                    console.error('错误响应内容:', errorText);
+                } catch (e) {
+                    console.error('无法读取错误响应:', e);
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}${errorText ? ' - ' + errorText.substring(0, 200) : ''}`);
+            }
+            
+            // 检查响应是否为JSON格式
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const responseText = await response.text();
+                console.error('响应不是JSON格式:', responseText.substring(0, 500));
+                throw new Error(`服务器返回了非JSON响应 (${contentType}): ${responseText.substring(0, 200)}`);
             }
             
             const result = await response.json();
