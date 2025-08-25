@@ -1,12 +1,17 @@
 {
   "version": 2,
+  "functions": {
+    "server.js": {
+      "maxDuration": 30
+    }
+  },
   "builds": [
     {
       "src": "server.js",
       "use": "@vercel/node"
     },
     {
-      "src": "public/**",
+      "src": "public/**/*",
       "use": "@vercel/static"
     }
   ],
@@ -16,11 +21,12 @@
       "dest": "/server.js"
     },
     {
+      "src": "/",
+      "dest": "/public/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/public/$1"
     }
-  ],
-  "env": {
-    "PORT": "3001"
-  }
+  ]
 }
