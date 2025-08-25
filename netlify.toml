@@ -13,8 +13,8 @@
   NPM_VERSION = "9"
   # 只安装生产依赖
   NODE_ENV = "production"
-  # 跳过puppeteer下载
-  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+  # OpenWeatherMap API密钥 (需要在Netlify控制台设置)
+  # OPENWEATHER_API_KEY = "your_api_key_here"
   # 加速npm安装
   NPM_CONFIG_AUDIT = "false"
   NPM_CONFIG_FUND = "false"

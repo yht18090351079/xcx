@@ -4,6 +4,13 @@ class WeatherAnalysisApp {
         this.weatherData = [];
         this.charts = {};
         this.isLoading = false;
+        this.autoRefreshTimer = null;
+        this.lastUpdateTime = null;
+        this.silentUpdate = false; // 静默更新标志
+        
+        // 自动刷新配置
+        this.AUTO_REFRESH_INTERVAL = 30 * 60 * 1000; // 30分钟
+        this.SILENT_UPDATE_THRESHOLD = 5 * 60 * 1000; // 5分钟后开始静默更新
         
         // DOM元素引用
         this.elements = {
@@ -418,21 +425,15 @@ class WeatherAnalysisApp {
             const dateTime = item.date ? `${item.date} ${item.time || ''}` : item.time || '--';
             const weather = item.weather || '--';
             const temperature = item.temperature || '--';
-            const feelsLike = item.details?.feelsLike || '--';
             const precipitation = item.precipitation || '--';
             const windSpeed = item.windSpeed || '--';
-            const uvIndex = item.uvIndex || '--';
-            const humidity = item.details?.humidity || '--';
             
             row.innerHTML = `
                 <td>${dateTime}</td>
                 <td>${weather}</td>
                 <td>${temperature}</td>
-                <td>${feelsLike}</td>
                 <td>${precipitation}</td>
                 <td>${windSpeed}</td>
-                <td>${uvIndex}</td>
-                <td>${humidity}</td>
             `;
             
             tbody.appendChild(row);

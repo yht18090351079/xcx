@@ -1,5 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+// 函数配置
+exports.config = {
+    timeout: 30, // 30秒超时
+    memory: 1024 // 1024MB内存
+};
 
 // 缓存配置
 let weatherDataCache = {
@@ -10,8 +13,15 @@ let weatherDataCache = {
 
 // 请求限制配置
 const requestLimiter = new Map();
-const REQUEST_LIMIT = 5; // 每分钟最多5次请求
+const REQUEST_LIMIT = 10; // 每分钟最多10次请求
 const LIMIT_WINDOW = 60 * 1000; // 1分钟
+
+// OpenWeatherMap API配置
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || 'demo_key';
+const GUANGYUAN_COORDS = {
+    lat: 32.4301,
+    lon: 106.0994
+};
 
 // 限流检查函数
 function checkRateLimit(clientIP) {
@@ -55,7 +65,112 @@ function updateCache(data) {
     weatherDataCache.timestamp = Date.now();
 }
 
-// 模拟天气数据（如果没有真实数据）
+// 获取实时天气数据
+async function fetchWeatherData() {
+    const baseUrl = 'https://api.openweathermap.org/data/2.5';
+    
+    try {
+        // 获取当前天气
+        const currentResponse = await fetch(
+            `${baseUrl}/weather?lat=${GUANGYUAN_COORDS.lat}&lon=${GUANGYUAN_COORDS.lon}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=zh_cn`
+        );
+        
+        if (!currentResponse.ok) {
+            throw new Error(`OpenWeatherMap API error: ${currentResponse.status}`);
+        }
+        
+        // 获取48小时预报
+        const forecastResponse = await fetch(
+            `${baseUrl}/forecast?lat=${GUANGYUAN_COORDS.lat}&lon=${GUANGYUAN_COORDS.lon}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=zh_cn&cnt=48`
+        );
+        
+        if (!forecastResponse.ok) {
+            throw new Error(`OpenWeatherMap Forecast API error: ${forecastResponse.status}`);
+        }
+        
+        const currentData = await currentResponse.json();
+        const forecastData = await forecastResponse.json();
+        
+        return { current: currentData, forecast: forecastData };
+        
+    } catch (error) {
+        console.error('获取天气数据失败:', error);
+        throw error;
+    }
+}
+
+// 转换API数据为我们的格式
+function transformWeatherData(apiData) {
+    const { current, forecast } = apiData;
+    const result = [];
+    
+    // 添加当前天气数据
+    const now = new Date();
+    result.push({
+        date: "今天",
+        time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        weather: current.weather[0].description || '未知',
+        temperature: `${Math.round(current.main.temp)} °`,
+        precipitation: current.rain ? `${Math.round((current.rain['1h'] || 0) * 100)}%` : '0%',
+        uvIndex: current.uvi ? Math.round(current.uvi).toString() : '--',
+        windSpeed: `${Math.round(current.wind.speed * 3.6)} 公里/小时`,
+        details: {
+            feelsLike: `${Math.round(current.main.feels_like)} °`,
+            humidity: `${current.main.humidity}%`,
+            cloudCover: `${current.clouds.all}%`,
+            visibility: current.visibility ? `${Math.round(current.visibility / 1000)} 公里` : '--',
+            pressure: `${current.main.pressure} hPa`,
+            windGust: current.wind.gust ? `${Math.round(current.wind.gust * 3.6)} 公里/小时` : '--'
+        }
+    });
+    
+    // 添加预报数据
+    forecast.list.forEach((item, index) => {
+        const date = new Date(item.dt * 1000);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dayAfterTomorrow = new Date(today);
+        dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+        
+        let dateStr;
+        if (date.toDateString() === today.toDateString()) {
+            dateStr = "今天";
+        } else if (date.toDateString() === tomorrow.toDateString()) {
+            dateStr = "明天";
+        } else if (date.toDateString() === dayAfterTomorrow.toDateString()) {
+            dateStr = "后天";
+        } else {
+            dateStr = date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+        }
+        
+        // 计算降水概率
+        const precipitationProb = item.pop ? Math.round(item.pop * 100) : 0;
+        
+        result.push({
+            date: dateStr,
+            time: date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+            weather: item.weather[0].description || '未知',
+            temperature: `${Math.round(item.main.temp)} °`,
+            precipitation: `${precipitationProb}%`,
+            uvIndex: '--', // 5天预报通常不包含UV指数
+            windSpeed: `${Math.round(item.wind.speed * 3.6)} 公里/小时`,
+            details: {
+                feelsLike: `${Math.round(item.main.feels_like)} °`,
+                humidity: `${item.main.humidity}%`,
+                cloudCover: `${item.clouds.all}%`,
+                visibility: item.visibility ? `${Math.round(item.visibility / 1000)} 公里` : '--',
+                pressure: `${item.main.pressure} hPa`,
+                windGust: item.wind.gust ? `${Math.round(item.wind.gust * 3.6)} 公里/小时` : '--'
+            },
+            index: index + 1
+        });
+    });
+    
+    return result.slice(0, 48); // 限制到48小时
+}
+
+// 生成模拟数据（当API不可用时）
 function generateMockWeatherData() {
     const mockData = [];
     const now = new Date();
@@ -64,7 +179,15 @@ function generateMockWeatherData() {
     for (let i = 0; i < 48; i++) {
         const time = new Date(now.getTime() + i * 60 * 60 * 1000);
         const hour = time.getHours().toString().padStart(2, '0') + ':00';
-        const dateStr = i < 24 ? '今天' : (i < 48 ? '明天' : '后天');
+        
+        let dateStr;
+        if (i < 24) {
+            dateStr = '今天';
+        } else if (i < 48) {
+            dateStr = '明天';
+        } else {
+            dateStr = '后天';
+        }
         
         mockData.push({
             date: dateStr,
@@ -80,18 +203,13 @@ function generateMockWeatherData() {
                 cloudCover: `${Math.floor(Math.random() * 100)}%`,
                 visibility: `${Math.floor(Math.random() * 20) + 10} 公里`,
                 pressure: `${Math.floor(Math.random() * 50) + 950} hPa`
-            }
+            },
+            index: i
         });
     }
     
     return mockData;
 }
-
-// 函数配置
-exports.config = {
-    timeout: 60, // 60秒超时
-    memory: 2048 // 2048MB内存
-};
 
 // 主函数
 exports.handler = async (event, context) => {
@@ -155,25 +273,27 @@ exports.handler = async (event, context) => {
                     success: true,
                     data: weatherDataCache.data,
                     cached: true,
-                    timestamp: new Date(weatherDataCache.timestamp).toISOString()
+                    timestamp: new Date(weatherDataCache.timestamp).toISOString(),
+                    source: 'cache'
                 })
             };
         }
 
-        // 尝试读取现有的天气数据文件
         let weatherData;
+        
+        // 尝试获取实时API数据
         try {
-            const dataPath = path.join(process.cwd(), 'weather_data.json');
-            if (fs.existsSync(dataPath)) {
-                const fileContent = fs.readFileSync(dataPath, 'utf8');
-                const parsedData = JSON.parse(fileContent);
-                weatherData = parsedData.data || parsedData;
-                console.log('使用现有天气数据文件');
-            } else {
-                throw new Error('天气数据文件不存在');
+            if (OPENWEATHER_API_KEY === 'demo_key') {
+                throw new Error('请配置 OPENWEATHER_API_KEY 环境变量');
             }
-        } catch (fileError) {
-            console.log('无法读取天气数据文件，生成模拟数据:', fileError.message);
+            
+            console.log('正在获取实时天气数据...');
+            const apiData = await fetchWeatherData();
+            weatherData = transformWeatherData(apiData);
+            console.log(`成功获取 ${weatherData.length} 条实时天气数据`);
+            
+        } catch (apiError) {
+            console.log('API调用失败，使用模拟数据:', apiError.message);
             weatherData = generateMockWeatherData();
         }
 
@@ -198,8 +318,6 @@ exports.handler = async (event, context) => {
         // 更新缓存
         updateCache(cleanedData);
 
-        console.log(`成功返回 ${cleanedData.length} 条天气数据`);
-
         return {
             statusCode: 200,
             headers,
@@ -209,7 +327,7 @@ exports.handler = async (event, context) => {
                 cached: false,
                 timestamp: new Date().toISOString(),
                 count: cleanedData.length,
-                source: 'netlify-function'
+                source: OPENWEATHER_API_KEY === 'demo_key' ? 'mock' : 'openweathermap-api'
             })
         };
 
